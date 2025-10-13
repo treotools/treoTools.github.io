@@ -40,6 +40,9 @@ class Student {
     this.pairPrefs = new Set();
     this.separatePrefs = new Set();
     this.isDragging = false;
+    // New properties for seat assignment
+    this.group = null; // SeatingGroup instance
+    this.seatIndex = null; // index in group's seatPositions
   }
 
   display() {
@@ -92,7 +95,13 @@ class SeatingGroup {
       this.y = mouseY + offsetY;
       this.rebuild();
     }
-
+    // Move assigned students with group every frame (unless they're being dragged)
+    for (let s of students) {
+      if (s.group === this && s.seatIndex !== null && !s.isDragging) {
+        s.x = this.seatPositions[s.seatIndex].x;
+        s.y = this.seatPositions[s.seatIndex].y;
+      }
+    }
     stroke(0);
     fill(255, 100);
     beginShape();
@@ -139,6 +148,18 @@ function mouseReleased() {
   }
   if (draggingGroup) {
     draggingGroup.isDragging = false;
+    // After group drag ends, update all assigned students' positions
+    for (let i = 0; i < seatingGroups.length; i++) {
+      let group = seatingGroups[i];
+      for (let j = 0; j < group.seats; j++) {
+        for (let s of students) {
+          if (s.group === group && s.seatIndex === j && !s.isDragging) {
+            s.x = group.seatPositions[j].x;
+            s.y = group.seatPositions[j].y;
+          }
+        }
+      }
+    }
     draggingGroup = null;
   }
 }
@@ -146,14 +167,20 @@ function mouseReleased() {
 function snapStudentToSeat(stud) {
   let threshold = 30;
   for (let group of seatingGroups) {
-    for (let pos of group.seatPositions) {
-      if (dist(stud.x, stud.y, pos.x, pos.y) < threshold) {
-        stud.x = pos.x;
-        stud.y = pos.y;
+    for (let i = 0; i < group.seatPositions.length; i++) {
+      let seat = group.seatPositions[i];
+      if (dist(stud.x, stud.y, seat.x, seat.y) < threshold) {
+        stud.x = seat.x;
+        stud.y = seat.y;
+        stud.group = group;
+        stud.seatIndex = i;
         return;
       }
     }
   }
+  // If not snapped to any seat, clear assignment
+  stud.group = null;
+  stud.seatIndex = null;
 }
 
 function createHamburgerMenu() {
@@ -185,7 +212,7 @@ function createSettingsUI() {
     <input type="number" id="numGroups" value="3"><br><br>
 
     <label>Seats per Group (comma-separated):</label><br>
-    <input type="text" id="seatsPerGroup" value="3,3,4"><br><br>
+    <input type="text" id="seatsPerGroup" value="3,2,4"><br><br>
 
     <button onclick="applySettings()">Apply Settings</button><br><br>
     <div id="studentPrefs"></div>
@@ -206,6 +233,7 @@ function applySettings() {
   settings.seatsPerGroup = select('#seatsPerGroup').value().split(',').map(s => int(s.trim()));
 
   let names = select('#studentNames').value().split(',').map(n => n.trim()).filter(n => n.length > 0);
+  names.sort((a, b) => a.localeCompare(b));
   names.forEach((name, i) => {
     let x = 100 + (i * 60);
     let y = height - 100;
@@ -243,10 +271,27 @@ function generatePreferenceUI() {
     pairDiv.hide();
     pairToggle.mousePressed(() => pairDiv.style('display', pairDiv.style('display') === 'none' ? 'block' : 'none'));
 
+    if (!window.pairCheckboxRefs) window.pairCheckboxRefs = {};
     students.forEach(other => {
       if (other.name !== s.name) {
-        let cb = createCheckbox(other.name, false).parent(pairDiv);
-        cb.changed(() => cb.checked() ? s.pairPrefs.add(other.name) : s.pairPrefs.delete(other.name));
+        let checked = s.pairPrefs.has(other.name);
+        let cb = createCheckbox(other.name, checked).parent(pairDiv);
+        // Store reference for bidirectional update
+        window.pairCheckboxRefs[s.name + '_' + other.name] = cb;
+        cb.changed(() => {
+          if (cb.checked()) {
+            s.pairPrefs.add(other.name);
+            other.pairPrefs.add(s.name);
+            // Update the paired checkbox for the other student directly
+            let otherCb = window.pairCheckboxRefs[other.name + '_' + s.name];
+            if (otherCb) otherCb.checked(true);
+          } else {
+            s.pairPrefs.delete(other.name);
+            other.pairPrefs.delete(s.name);
+            let otherCb = window.pairCheckboxRefs[other.name + '_' + s.name];
+            if (otherCb) otherCb.checked(false);
+          }
+        });
       }
     });
 
@@ -255,10 +300,25 @@ function generatePreferenceUI() {
     sepDiv.hide();
     sepToggle.mousePressed(() => sepDiv.style('display', sepDiv.style('display') === 'none' ? 'block' : 'none'));
 
+    if (!window.sepCheckboxRefs) window.sepCheckboxRefs = {};
     students.forEach(other => {
       if (other.name !== s.name) {
-        let cb = createCheckbox(other.name, false).parent(sepDiv);
-        cb.changed(() => cb.checked() ? s.separatePrefs.add(other.name) : s.separatePrefs.delete(other.name));
+        let checked = s.separatePrefs.has(other.name);
+        let cb = createCheckbox(other.name, checked).parent(sepDiv);
+        window.sepCheckboxRefs[s.name + '_' + other.name] = cb;
+        cb.changed(() => {
+          if (cb.checked()) {
+            s.separatePrefs.add(other.name);
+            other.separatePrefs.add(s.name);
+            let otherCb = window.sepCheckboxRefs[other.name + '_' + s.name];
+            if (otherCb) otherCb.checked(true);
+          } else {
+            s.separatePrefs.delete(other.name);
+            other.separatePrefs.delete(s.name);
+            let otherCb = window.sepCheckboxRefs[other.name + '_' + s.name];
+            if (otherCb) otherCb.checked(false);
+          }
+        });
       }
     });
 
@@ -269,61 +329,105 @@ function generatePreferenceUI() {
 }
 
 function generateSuggestion() {
+  // Deterministic brute-force for small groups
   suggestedAssignment = {};
+  let presentStudents = students.filter(s => s.attendance);
+  let seatCount = settings.seatsPerGroup.reduce((a, b) => a + b, 0);
+  if (presentStudents.length > 8) {
+    alert('Too many students for brute-force seating.');
+    return;
+  }
+  // Generate all seat objects
   let availableSeats = [];
   seatingGroups.forEach((group, gIdx) => {
     group.seatPositions.forEach((_, i) => availableSeats.push({ groupIdx: gIdx, seatIdx: i }));
   });
-
-  let presentStudents = students.filter(s => s.attendance);
-  shuffle(presentStudents, true);
-
-  presentStudents.forEach(s => {
-    let bestSeat = null;
-    let bestScore = -Infinity;
-
-    availableSeats.forEach(seat => {
-      let score = 0;
-
+  // Generate all permutations
+  function permute(arr) {
+    if (arr.length <= 1) return [arr];
+    let out = [];
+    for (let i = 0; i < arr.length; i++) {
+      let rest = arr.slice(0, i).concat(arr.slice(i + 1));
+      for (let p of permute(rest)) {
+        out.push([arr[i]].concat(p));
+      }
+    }
+    return out;
+  }
+  let bestScore = -Infinity;
+  let bestAssignments = [];
+  let perms = permute(presentStudents);
+  for (let perm of perms) {
+    let score = 0;
+    let assignment = {};
+    for (let i = 0; i < perm.length; i++) {
+      assignment[perm[i].name] = availableSeats[i];
+    }
+    // Score this assignment
+    for (let s of perm) {
+      let seat = assignment[s.name];
+      let groupSeats = settings.seatsPerGroup[seat.groupIdx];
+      // Pairing
       for (let buddyName of s.pairPrefs) {
         let buddy = students.find(b => b.name === buddyName);
-        if (buddy && suggestedAssignment[buddy.name]) {
-          score += (suggestedAssignment[buddy.name].groupIdx === seat.groupIdx) ? 5 : -3;
+        if (buddy && assignment[buddy.name]) {
+          if (assignment[buddy.name].groupIdx === seat.groupIdx && assignment[buddy.name].seatIdx !== seat.seatIdx && groupSeats === 2) {
+            score += 10;
+          } else if (assignment[buddy.name].groupIdx === seat.groupIdx) {
+            score += 5;
+          } else {
+            score -= 3;
+          }
         }
       }
-
-      for (let avoidName of s.separatePrefs) {
-        let other = students.find(b => b.name === avoidName);
-        if (other && suggestedAssignment[other.name]) {
-          score -= (suggestedAssignment[other.name].groupIdx === seat.groupIdx) ? 6 : 0;
+      // Separation
+      for (let other of students) {
+        if (other !== s && assignment[other.name]) {
+          let wantsSeparation = s.separatePrefs.has(other.name) || other.separatePrefs.has(s.name);
+          if (wantsSeparation) {
+            if (assignment[other.name].groupIdx === seat.groupIdx && assignment[other.name].seatIdx !== seat.seatIdx && groupSeats === 2) {
+              score -= 100;
+            } else if (assignment[other.name].groupIdx === seat.groupIdx) {
+              score -= 50;
+            }
+          }
         }
       }
-
-      if (score > bestScore) {
-        bestScore = score;
-        bestSeat = seat;
-      }
-    });
-
-    if (bestSeat) {
-      suggestedAssignment[s.name] = bestSeat;
-      let pos = seatingGroups[bestSeat.groupIdx].seatPositions[bestSeat.seatIdx];
+    }
+    if (score > bestScore) {
+      bestScore = score;
+      bestAssignments = [assignment];
+    } else if (score === bestScore) {
+      bestAssignments.push(assignment);
+    }
+  }
+  // Randomly select one of the best assignments
+  if (bestAssignments.length > 0) {
+    let chosen = bestAssignments[Math.floor(Math.random() * bestAssignments.length)];
+    for (let s of presentStudents) {
+      let seat = chosen[s.name];
+      let group = seatingGroups[seat.groupIdx];
+      let pos = group.seatPositions[seat.seatIdx];
       s.x = pos.x;
       s.y = pos.y;
-      availableSeats = availableSeats.filter(seat => !(seat.groupIdx === bestSeat.groupIdx && seat.seatIdx === bestSeat.seatIdx));
+      s.group = group;
+      s.seatIndex = seat.seatIdx;
     }
-  });
+  }
 }
 
 function exportData() {
   let data = {
     settings,
+    groups: seatingGroups.map(g => ({ x: g.x, y: g.y })),
     students: students.map(s => ({
       name: s.name,
       attendance: s.attendance,
       notes: s.notes,
       pairPrefs: [...s.pairPrefs],
-      separatePrefs: [...s.separatePrefs]
+      separatePrefs: [...s.separatePrefs],
+      groupIdx: s.group ? seatingGroups.indexOf(s.group) : null,
+      seatIdx: s.seatIndex
     }))
   };
   select('#importExport').value(JSON.stringify(data, null, 2));
@@ -337,6 +441,15 @@ function importData() {
     select('#seatsPerGroup').value(settings.seatsPerGroup.join(','));
     select('#studentNames').value(data.students.map(s => s.name).join(','));
     applySettings();
+    // Restore group positions
+    if (data.groups && data.groups.length === seatingGroups.length) {
+      for (let i = 0; i < seatingGroups.length; i++) {
+        seatingGroups[i].x = data.groups[i].x;
+        seatingGroups[i].y = data.groups[i].y;
+        seatingGroups[i].rebuild();
+      }
+    }
+    // Restore student assignments and preferences
     data.students.forEach(saved => {
       let s = students.find(st => st.name === saved.name);
       if (s) {
@@ -344,6 +457,13 @@ function importData() {
         s.notes = saved.notes;
         s.pairPrefs = new Set(saved.pairPrefs);
         s.separatePrefs = new Set(saved.separatePrefs);
+        if (saved.groupIdx !== null && saved.seatIdx !== null && seatingGroups[saved.groupIdx]) {
+          s.group = seatingGroups[saved.groupIdx];
+          s.seatIndex = saved.seatIdx;
+          let pos = s.group.seatPositions[s.seatIndex];
+          s.x = pos.x;
+          s.y = pos.y;
+        }
       }
     });
     generatePreferenceUI();
