@@ -217,11 +217,57 @@ function createSettingsUI() {
     <button onclick="applySettings()">Apply Settings</button><br><br>
     <div id="studentPrefs"></div>
 
-    <button onclick="generateSuggestion()">Suggest Seating</button>
-    <button onclick="exportData()">Export Data</button><br><br>
-    <textarea id="importExport" rows="8" style="width:100%"></textarea><br>
-    <button onclick="importData()">Import Data</button>
+  <div style="display:flex;align-items:center;gap:10px;">
+    <button id="suggestBtn">Suggest Seating</button>
+    <label style="display:flex;align-items:center;gap:4px;">
+      <input type="checkbox" id="allowBruteForce"> Allow brute-force seating (slow)
+    </label>
+    <span id="loadingSpinner" style="display:none;"><svg width="20" height="20" viewBox="0 0 50 50"><circle cx="25" cy="25" r="20" fill="none" stroke="#888" stroke-width="5" stroke-dasharray="31.4 31.4" transform="rotate(-90 25 25)"><animateTransform attributeName="transform" type="rotate" from="0 25 25" to="360 25 25" dur="1s" repeatCount="indefinite"/></circle></svg></span>
+  </div>
+  <button id="exportCopy">Export & Copy</button><br><br>
+  <textarea id="importExport" rows="8" style="width:100%"></textarea><br>
+  <button onclick="importData()">Import Data</button>
   `);
+  // Add export & copy logic
+  setTimeout(() => {
+    let exportCopyBtn = select('#exportCopy');
+    if (exportCopyBtn) {
+      exportCopyBtn.mousePressed(() => {
+        // Run exportData logic
+        let data = {
+          settings,
+          groups: seatingGroups.map(g => ({ x: g.x, y: g.y })),
+          students: students.map(s => ({
+            name: s.name,
+            attendance: s.attendance,
+            notes: s.notes,
+            pairPrefs: [...s.pairPrefs],
+            separatePrefs: [...s.separatePrefs],
+            groupIdx: s.group ? seatingGroups.indexOf(s.group) : null,
+            seatIdx: s.seatIndex
+          }))
+        };
+        let txt = JSON.stringify(data, null, 2);
+        select('#importExport').value(txt);
+        navigator.clipboard.writeText(txt).then(() => {
+          exportCopyBtn.html('Copied!');
+          setTimeout(() => exportCopyBtn.html('Export & Copy'), 1000);
+        });
+      });
+    }
+    // Suggest Seating button logic with loading spinner
+    let suggestBtn = select('#suggestBtn');
+    let loadingSpinner = select('#loadingSpinner');
+    if (suggestBtn && loadingSpinner) {
+      suggestBtn.mousePressed(() => {
+        loadingSpinner.style('display', 'inline-block');
+        setTimeout(() => {
+          generateSuggestion();
+          loadingSpinner.style('display', 'none');
+        }, 50);
+      });
+    }
+  }, 100);
 }
 
 function applySettings() {
@@ -263,8 +309,8 @@ function generatePreferenceUI() {
     div.style('margin-bottom', '15px');
 
     createDiv(`<strong>${s.name}</strong>`).parent(div);
-    let att = createCheckbox(' Present', true).parent(div);
-    att.changed(() => s.attendance = att.checked());
+  let att = createCheckbox(' Present', s.attendance).parent(div);
+  att.changed(() => s.attendance = att.checked());
 
     let pairToggle = createButton("👯 Pairing").parent(div);
     let pairDiv = createDiv().parent(div);
@@ -322,27 +368,80 @@ function generatePreferenceUI() {
       }
     });
 
-    createDiv('Notes:').parent(div);
-    let note = createInput('').style('width: 150px').parent(div);
-    note.input(() => s.notes = note.value());
+  createDiv('Notes:').parent(div);
+  let note = createInput(s.notes).style('width: 150px').parent(div);
+  note.input(() => s.notes = note.value());
   }
 }
 
 function generateSuggestion() {
-  // Deterministic brute-force for small groups
+  // Brute-force or greedy based on checkbox
   suggestedAssignment = {};
   let presentStudents = students.filter(s => s.attendance);
   let seatCount = settings.seatsPerGroup.reduce((a, b) => a + b, 0);
-  if (presentStudents.length > 8) {
-    alert('Too many students for brute-force seating.');
+  let allowBruteForce = select('#allowBruteForce') && select('#allowBruteForce').checked();
+  if (presentStudents.length > 8 && !allowBruteForce) {
+    // Greedy algorithm for large groups
+    // Assign students to seats, prioritizing pair/separation prefs
+    let availableSeats = [];
+    seatingGroups.forEach((group, gIdx) => {
+      group.seatPositions.forEach((_, i) => availableSeats.push({ groupIdx: gIdx, seatIdx: i }));
+    });
+    // Sort students by number of pairPrefs (descending), then separationPrefs
+    let sorted = [...presentStudents].sort((a, b) => b.pairPrefs.size - a.pairPrefs.size || b.separatePrefs.size - a.separatePrefs.size);
+    let seatAssignments = {};
+    let usedSeats = new Set();
+    for (let s of sorted) {
+      // Try to find a seat in a group with most pairPrefs
+      let bestSeat = null;
+      let bestScore = -Infinity;
+      for (let seat of availableSeats) {
+        if (usedSeats.has(seat.groupIdx + '-' + seat.seatIdx)) continue;
+        let score = 0;
+        // Pairing: prefer seats in groups with buddies
+        for (let buddyName of s.pairPrefs) {
+          let buddy = sorted.find(b => b.name === buddyName);
+          if (buddy && seatAssignments[buddy.name] && seatAssignments[buddy.name].groupIdx === seat.groupIdx) {
+            score += 5;
+          }
+        }
+        // Separation: penalize seats in groups with separated
+        for (let other of sorted) {
+          if (other !== s && seatAssignments[other.name] && seatAssignments[other.name].groupIdx === seat.groupIdx) {
+            if (s.separatePrefs.has(other.name) || other.separatePrefs.has(s.name)) {
+              score -= 50;
+            }
+          }
+        }
+        if (score > bestScore) {
+          bestScore = score;
+          bestSeat = seat;
+        }
+      }
+      if (bestSeat) {
+        seatAssignments[s.name] = bestSeat;
+        usedSeats.add(bestSeat.groupIdx + '-' + bestSeat.seatIdx);
+      }
+    }
+    // Assign positions
+    for (let s of sorted) {
+      let seat = seatAssignments[s.name];
+      if (seat) {
+        let group = seatingGroups[seat.groupIdx];
+        let pos = group.seatPositions[seat.seatIdx];
+        s.x = pos.x;
+        s.y = pos.y;
+        s.group = group;
+        s.seatIndex = seat.seatIdx;
+      }
+    }
     return;
   }
-  // Generate all seat objects
+  // Brute-force for small groups or if allowed
   let availableSeats = [];
   seatingGroups.forEach((group, gIdx) => {
     group.seatPositions.forEach((_, i) => availableSeats.push({ groupIdx: gIdx, seatIdx: i }));
   });
-  // Generate all permutations
   function permute(arr) {
     if (arr.length <= 1) return [arr];
     let out = [];
