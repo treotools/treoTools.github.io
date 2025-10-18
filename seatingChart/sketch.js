@@ -6,10 +6,10 @@ let draggingGroup = null;
 let offsetX = 0, offsetY = 0;
 
 let hamburgerBtn, uiDiv;
-let settings = { numGroups: 3, seatsPerGroup: [3, 3, 4] };
+let settings = { seatsPerGroup: [3, 3, 4] };
 
 function setup() {
-  createCanvas(windowWidth, windowHeight);
+  createCanvas(windowWidth, windowHeight - 39);
   textFont('Arial');
   createHamburgerMenu();
   createSettingsUI();
@@ -185,7 +185,8 @@ function snapStudentToSeat(stud) {
 
 function createHamburgerMenu() {
   hamburgerBtn = createButton('☰');
-  hamburgerBtn.position(10, 10);
+  //hamburgerBtn.position(10, 10);
+  hamburgerBtn.position(10, 70);
   hamburgerBtn.size(30, 30);
   hamburgerBtn.style('font-size', '20px');
   hamburgerBtn.mousePressed(() => {
@@ -194,7 +195,8 @@ function createHamburgerMenu() {
   });
 
   uiDiv = createDiv().id('settingsUI');
-  uiDiv.position(10, 50);
+  //uiDiv.position(10, 50);
+  uiDiv.position(10, 70);
   uiDiv.style('background', '#fff');
   uiDiv.style('padding', '10px');
   uiDiv.style('border', '1px solid #ccc');
@@ -204,32 +206,51 @@ function createHamburgerMenu() {
 
 function createSettingsUI() {
   uiDiv.html(`
-    <h3>Seating Chart Setup</h3>
+    <div style="position: relative;">
+      <h3 style="margin: 0; padding-top: 4px; padding-bottom: 6px;">Seating Chart Setup</h3>
+      <button id="closeSettingsBtn" style="
+        position: absolute;
+        top: 0;
+        right: 0;
+        padding: 2px 6px;
+        font-size: 16px;
+        border: none;
+        background: transparent;
+        cursor: pointer;
+      ">❌</button>
+    </div>
     <label>Student Names (comma-separated):</label><br>
-    <input type="text" id="studentNames"><br><br>
+    <input type="text" id="studentNames"><br>
 
-    <label>Number of Groups:</label><br>
-    <input type="number" id="numGroups" value="3"><br><br>
+    <label>Tables (by # of seats, comma-separated):</label><br>
+    <input type="text" id="seatsPerGroup" value="3,2,4"><br>
 
-    <label>Seats per Group (comma-separated):</label><br>
-    <input type="text" id="seatsPerGroup" value="3,2,4"><br><br>
-
-    <button onclick="applySettings()">Apply Settings</button><br><br>
+    <button onclick="applySettings()">Generate Classroom</button><br>
     <div id="studentPrefs"></div>
 
-  <div style="display:flex;align-items:center;gap:10px;">
-    <button id="suggestBtn">Suggest Seating</button>
-    <label style="display:flex;align-items:center;gap:4px;">
-      <input type="checkbox" id="allowBruteForce"> Allow brute-force seating (slow)
-    </label>
-    <span id="loadingSpinner" style="display:none;"><svg width="20" height="20" viewBox="0 0 50 50"><circle cx="25" cy="25" r="20" fill="none" stroke="#888" stroke-width="5" stroke-dasharray="31.4 31.4" transform="rotate(-90 25 25)"><animateTransform attributeName="transform" type="rotate" from="0 25 25" to="360 25 25" dur="1s" repeatCount="indefinite"/></circle></svg></span>
-  </div>
-  <button id="exportCopy">Export & Copy</button><br><br>
-  <textarea id="importExport" rows="8" style="width:100%"></textarea><br>
-  <button onclick="importData()">Import Data</button>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <button id="suggestBtn">Suggest Seating</button>
+      <label style="display:flex;align-items:center;gap:4px;">
+        <input type="checkbox" id="allowBruteForce"> Brute-force seating (slow)
+      </label>
+      <span id="loadingSpinner" style="display:none;"><svg width="20" height="20" viewBox="0 0 50 50"><circle cx="25" cy="25" r="20" fill="none" stroke="#888" stroke-width="5" stroke-dasharray="31.4 31.4" transform="rotate(-90 25 25)"><animateTransform attributeName="transform" type="rotate" from="0 25 25" to="360 25 25" dur="1s" repeatCount="indefinite"/></circle></svg></span>
+    </div>
+
+    <div style="display:flex;align-items:center;gap:10px;">
+      <button onclick="importData()">Import Data</button>
+      <button id="exportCopy">Export & Copy Data</button><br><br>
+    </div>
+
+    <textarea id="importExport" rows="8" style="width: 100%"></textarea>
   `);
   // Add export & copy logic
   setTimeout(() => {
+    let closeBtn = select('#closeSettingsBtn');
+    if (closeBtn) {
+      closeBtn.mousePressed(() => {
+        uiDiv.style('display', 'none');
+      });
+    }
     let exportCopyBtn = select('#exportCopy');
     if (exportCopyBtn) {
       exportCopyBtn.mousePressed(() => {
@@ -275,7 +296,6 @@ function applySettings() {
   seatingGroups = [];
   suggestedAssignment = {};
 
-  settings.numGroups = int(select('#numGroups').value());
   settings.seatsPerGroup = select('#seatsPerGroup').value().split(',').map(s => int(s.trim()));
 
   let names = select('#studentNames').value().split(',').map(n => n.trim()).filter(n => n.length > 0);
@@ -286,12 +306,7 @@ function applySettings() {
     students.push(new Student(name, x, y));
   });
 
-  if (settings.seatsPerGroup.length !== settings.numGroups) {
-    alert("Mismatch between number of groups and seat counts.");
-    return;
-  }
-
-  for (let g = 0; g < settings.numGroups; g++) {
+  for (let g = 0; g < settings.seatsPerGroup.length; g++) {
     let gx = 300 + (g % 3) * 200;
     let gy = 150 + Math.floor(g / 3) * 200;
     seatingGroups.push(new SeatingGroup(gx, gy, settings.seatsPerGroup[g]));
@@ -302,11 +317,11 @@ function applySettings() {
 
 function generatePreferenceUI() {
   let container = select('#studentPrefs');
-  container.html('<h4>Student Preferences</h4>');
+  container.html('<h4>Classroom Preferences</h4>');
 
   for (let s of students) {
     let div = createDiv().parent(container);
-    div.style('margin-bottom', '15px');
+    div.style('margin-bottom', '5px');
 
     createDiv(`<strong>${s.name}</strong>`).parent(div);
   let att = createCheckbox(' Present', s.attendance).parent(div);
@@ -536,7 +551,6 @@ function importData() {
   try {
     let data = JSON.parse(select('#importExport').value());
     settings = data.settings;
-    select('#numGroups').value(settings.numGroups);
     select('#seatsPerGroup').value(settings.seatsPerGroup.join(','));
     select('#studentNames').value(data.students.map(s => s.name).join(','));
     applySettings();
