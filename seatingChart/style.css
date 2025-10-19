@@ -2,7 +2,6 @@
 
 body {
   margin: 0;
-  padding-top: 4px; padding-bottom: 6px;
   font-family: 'Poppins', sans-serif;
   font-weight: bold;
 }
@@ -13,13 +12,13 @@ body {
   left: 0;
   top: 0;
   width: 100%;
-  background-color: #dad9d9;
+  background-color: #E2ECF7;
   z-index: 1;
 }
 
 .topnav a {
   float: right;
-  color: #999998;
+  color: #3898EC;
   text-align: center;
   padding: 14px 16px;
   text-decoration: none;
@@ -28,7 +27,7 @@ body {
 
 .topnav a.title {
   float: left;
-  color: #999998;
+  color: #3898EC;
   text-align: center;
   padding: 14px 16px;
   text-decoration: none;
@@ -36,13 +35,13 @@ body {
 }
 
 .topnav a:hover {
-  background-color: #f7f7f7ff;
-  color: black;
+  background-color: #3898EC;
+  color: #F7F7F7FF;
 }
 
 .topnav a.active {
-  background-color: #999998;
-  color: #ddd;
+  background-color: #3898EC;
+  color: #E2ECF7;
 }
 
 .menu {
@@ -55,7 +54,7 @@ body {
 
 .menu .dropdown {
   border: none;
-  background-color: #dad9d9;
+  background-color: #E2ECF7;
   display: none;
 }
 
@@ -63,13 +62,13 @@ body {
   display: none;
   margin-top: -30px;
   margin-left: -48px;
-  background-color: #dad9d9;
+  background-color: #E2ECF7;
   min-width: 3%;
   z-index: 1;
 }
 
 .dropdownMenu a {
-  color: #999998;
+  color: #3898EC;
   padding: 14px 16px;
   font-family: 'Poppins', sans-serif;
   font-weight: bold;
@@ -79,12 +78,13 @@ body {
 }
 
 .dropdownMenu a.selected {
-  background-color: #999998;
-  color: #ddd;
+  background-color: #3898EC;
+  color: #E2ECF7;
 }
 
 .dropdownMenu a:hover {
-  background-color: #f7f7f7ff;
+  background-color: #3898EC;
+  color: #E2ECF7;
 }
 
 .menu:hover .dropdownMenu {
@@ -107,13 +107,14 @@ body {
   bottom: 0;
   height: 60px;
   width: 100%;
-  background-color: #dad9d9;
-}
-
-input[type=text] {
-  margin-bottom: 15px;
+  background-color: #E2ECF7;
+  text-align: center;
 }
 
 canvas {
   display: block;
+}
+
+label {
+  color: #E2ECF7;
 }

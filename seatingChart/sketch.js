@@ -17,7 +17,7 @@ function setup() {
 }
 
 function draw() {
-  background(240);
+  background(226, 236, 247);
   for (let group of seatingGroups) group.display();
   for (let s of students) {
     s.update();
@@ -187,8 +187,13 @@ function createHamburgerMenu() {
   hamburgerBtn = createButton('☰');
   //hamburgerBtn.position(10, 10);
   hamburgerBtn.position(10, 70);
-  hamburgerBtn.size(30, 30);
+  hamburgerBtn.size(45, 45);
   hamburgerBtn.style('font-size', '20px');
+  hamburgerBtn.style('background-color', '#E2ECF7');
+  hamburgerBtn.style('border', '3px solid #3898EC');
+  hamburgerBtn.style('border-radius', '9px');
+  hamburgerBtn.style('color', '#3898EC');
+  hamburgerBtn.style('text-align', 'center');
   hamburgerBtn.mousePressed(() => {
     let isVisible = uiDiv.style('display') !== 'none';
     uiDiv.style('display', isVisible ? 'none' : 'block');
@@ -197,17 +202,40 @@ function createHamburgerMenu() {
   uiDiv = createDiv().id('settingsUI');
   //uiDiv.position(10, 50);
   uiDiv.position(10, 70);
-  uiDiv.style('background', '#fff');
-  uiDiv.style('padding', '10px');
-  uiDiv.style('border', '1px solid #ccc');
-  uiDiv.style('max-height', '85vh');
-  uiDiv.style('overflow-y', 'auto');
 }
 
 function createSettingsUI() {
   uiDiv.html(`
-    <div style="position: relative;">
-      <h3 style="margin: 0; padding-top: 4px; padding-bottom: 6px;">Seating Chart Setup</h3>
+    <div style="position: relative; margin-bottom: 10px;">
+      <style>
+        #settingsUI {
+          background: #3898EC;
+          padding: 10px;
+          border:1px solid #ccc;
+          max-height: 85vh;
+          overflow-y: auto;
+          border-radius: 9px;
+        }
+
+        .treoBtn {
+          background-color: #E2ECF7;
+          border: 2px solid #E2ECF7;
+          color: #3898EC;
+          padding: 6px;
+          text-align: center;
+          text-decoration: none;
+          display: inline-block;
+          font-size: 16px;
+          margin: 4px 2px;
+          cursor: pointer;
+          border-radius: 6px;
+        }
+        .treoBtn:hover {
+          background-color: #3898EC;
+          color: #E2ECF7;
+        }
+      </style>
+      <h3 style="color: #E2ECF7;margin: 0; padding-top: 4px; padding-bottom: 6px;">Seating Chart Setup</h3>
       <button id="closeSettingsBtn" style="
         position: absolute;
         top: 0;
@@ -225,11 +253,11 @@ function createSettingsUI() {
     <label>Tables (by # of seats, comma-separated):</label><br>
     <input type="text" id="seatsPerGroup" value="3,2,4"><br>
 
-    <button onclick="applySettings()">Generate Classroom</button><br>
+    <button class="treoBtn" onclick="applySettings()">Generate Classroom</button><br>
     <div id="studentPrefs"></div>
 
     <div style="display:flex;align-items:center;gap:10px;">
-      <button id="suggestBtn">Suggest Seating</button>
+      <button class="treoBtn"id="suggestBtn">Suggest Seating</button>
       <label style="display:flex;align-items:center;gap:4px;">
         <input type="checkbox" id="allowBruteForce"> Brute-force seating (slow)
       </label>
@@ -237,8 +265,8 @@ function createSettingsUI() {
     </div>
 
     <div style="display:flex;align-items:center;gap:10px;">
-      <button onclick="importData()">Import Data</button>
-      <button id="exportCopy">Export & Copy Data</button><br><br>
+      <button class="treoBtn" style="border-radius: 8px" onclick="importData()">Import Data</button>
+      <button class="treoBtn" id="exportCopy">Export & Copy Data</button><br><br>
     </div>
 
     <textarea id="importExport" rows="8" style="width: 100%"></textarea>
@@ -317,7 +345,7 @@ function applySettings() {
 
 function generatePreferenceUI() {
   let container = select('#studentPrefs');
-  container.html('<h4>Classroom Preferences</h4>');
+  container.html('<h4 style="color: #E2ECF7;">Classroom Preferences</h4>');
 
   for (let s of students) {
     let div = createDiv().parent(container);
