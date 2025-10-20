@@ -34,7 +34,7 @@ class Student {
     this.name = name;
     this.x = x;
     this.y = y;
-    this.size = 40;
+    this.size = 60;
     this.attendance = true;
     this.notes = '';
     this.pairPrefs = new Set();
@@ -46,7 +46,7 @@ class Student {
   }
 
   display() {
-    strokeWeight(1);
+    strokeWeight(0);
     fill(this.attendance ? 'lightgreen' : 'lightgray');
     stroke(this.attendance ? 0 : 'red');
     ellipse(this.x, this.y, this.size);
@@ -73,7 +73,7 @@ class SeatingGroup {
     this.x = x;
     this.y = y;
     this.seats = seats;
-    this.radius = 80;
+    this.radius = 90;
     this.seatPositions = [];
     this.isDragging = false;
     this.rebuild();
@@ -102,7 +102,8 @@ class SeatingGroup {
         s.y = this.seatPositions[s.seatIndex].y;
       }
     }
-    stroke(0);
+    stroke(56, 152, 236);
+    strokeWeight(3);
     fill(255, 100);
     beginShape();
     for (let p of this.seatPositions) vertex(p.x, p.y);
