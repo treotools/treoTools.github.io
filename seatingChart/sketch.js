@@ -4,6 +4,21 @@ let suggestedAssignment = {};
 let draggingStudent = null;
 let draggingGroup = null;
 let offsetX = 0, offsetY = 0;
+let dragConstraints = {
+  student: {
+    left: 45,
+    right: 45,
+    top: 75,
+    bottom: 75
+  },
+  group: {
+    left: 126,  // Extra room for group radius
+    right: 126,
+    top: 156,
+    bottom: 156
+  }
+};
+
 
 let hamburgerBtn, uiDiv;
 let settings = { seatsPerGroup: [3, 3, 4] };
@@ -22,11 +37,14 @@ function draw() {
   for (let s of students) {
     s.update();
     s.display();
+    s.drawMenu();
   }
+
+  //drawStudentTooltip(); // optional: you can skip tooltip if dropdown handles it
 }
 
 function windowResized() {
-  resizeCanvas(windowWidth, windowHeight);
+  resizeCanvas(windowWidth, windowHeight - 39);
 }
 
 class Student {
@@ -35,34 +53,82 @@ class Student {
     this.x = x;
     this.y = y;
     this.size = 60;
+    this.menuOpen = false;
     this.attendance = true;
     this.notes = '';
     this.pairPrefs = new Set();
     this.separatePrefs = new Set();
+    this.d = dist(mouseX, mouseY, this.x, this.y);
+    this.isHovering = false;
     this.isDragging = false;
-    // New properties for seat assignment
-    this.group = null; // SeatingGroup instance
-    this.seatIndex = null; // index in group's seatPositions
+    this.group = null;
+    this.seatIndex = null;
   }
 
   display() {
-    strokeWeight(0);
+    strokeWeight(this.isHovering ? 3 : 0);
     fill(this.attendance ? 'lightgreen' : 'lightgray');
-    stroke(this.attendance ? 0 : 'red');
+    stroke(this.isDragging ? 'black' : (this.attendance ? 'white' : 'red'));
     ellipse(this.x, this.y, this.size);
     fill(0);
     noStroke();
     textAlign(CENTER, CENTER);
     text(this.name, this.x, this.y);
+    if (this.isHovering) {
+      fill(50);
+      textSize(14);
+      text('▼', this.x, this.y + this.size / 3);
+    }
+  }
+
+  isArrowClicked(mx, my) {
+    let arrowY = this.y + this.size / 4;
+    let arrowW = 20, arrowH = 20;
+    let arrowX = this.x - arrowW / 2;
+    return mx >= arrowX && mx <= arrowX + arrowW &&
+          my >= arrowY && my <= arrowY + arrowH;
+  }
+
+  drawMenu() {
+    if (!this.menuOpen) return;
+
+    let w = 200;
+    let h = 100;
+    let x = constrain(this.x + this.size / 2 + 10, 0, width - w - 10);
+    let y = constrain(this.y - h / 2, 0, height - h - 10);
+
+    // Box
+    fill(255);
+    stroke(0);
+    strokeWeight(1);
+    rect(x, y, w, h, 8);
+
+    // Content
+    fill(0);
+    noStroke();
+    textSize(14);
+    textAlign(LEFT, TOP);
+    let margin = 10;
+    text(`🧍 Name: ${this.name}`, x + margin, y + margin);
+    text(`📝 Notes: ${this.notes || 'None'}`, x + margin, y + margin + 20);
+    text(`✅ Present: ${this.attendance ? 'Yes' : 'No'}`, x + margin, y + margin + 40);
   }
 
   update() {
     if (this.isDragging) {
-      this.x = mouseX + offsetX;
-      this.y = mouseY + offsetY;
+      this.x = constrain(mouseX + offsetX, 
+                        dragConstraints.student.left, 
+                        width - dragConstraints.student.right);
+      this.y = constrain(mouseY + offsetY, 
+                        dragConstraints.student.top, 
+                        height - dragConstraints.student.bottom);
     }
+
+    let d = dist(mouseX, mouseY, this.x, this.y);
+    this.isHovering = d < this.size / 2;
   }
 
+  // ADD THIS METHOD - it was missing!
   isMouseOver() {
     return dist(this.x, this.y, mouseX, mouseY) < this.size / 2;
   }
@@ -91,17 +157,32 @@ class SeatingGroup {
 
   display() {
     if (this.isDragging) {
-      this.x = mouseX + offsetX;
-      this.y = mouseY + offsetY;
+      this.x = constrain(mouseX + offsetX, 
+                        dragConstraints.group.left, 
+                        width - dragConstraints.group.right);
+      this.y = constrain(mouseY + offsetY, 
+                        dragConstraints.group.top, 
+                        height - dragConstraints.group.bottom);
       this.rebuild();
     }
+    
     // Move assigned students with group every frame (unless they're being dragged)
+    // AND constrain their positions to stay on screen
     for (let s of students) {
       if (s.group === this && s.seatIndex !== null && !s.isDragging) {
-        s.x = this.seatPositions[s.seatIndex].x;
-        s.y = this.seatPositions[s.seatIndex].y;
+        let targetX = this.seatPositions[s.seatIndex].x;
+        let targetY = this.seatPositions[s.seatIndex].y;
+        
+        // Constrain student positions even when moving with group
+        s.x = constrain(targetX, 
+                      dragConstraints.student.left, 
+                      width - dragConstraints.student.right);
+        s.y = constrain(targetY, 
+                      dragConstraints.student.top, 
+                      height - dragConstraints.student.bottom);
       }
     }
+    
     stroke(56, 152, 236);
     strokeWeight(3);
     fill(255, 100);
@@ -121,6 +202,19 @@ class SeatingGroup {
 }
 
 function mousePressed() {
+  let clickedAnyArrow = false;
+
+  for (let s of students) {
+    if (s.isArrowClicked(mouseX, mouseY)) {
+      s.menuOpen = !s.menuOpen;
+      clickedAnyArrow = true;
+    } else {
+      s.menuOpen = false;
+    }
+  }
+
+  if (clickedAnyArrow) return;
+
   for (let s of students) {
     if (s.isMouseOver()) {
       draggingStudent = s;
@@ -130,6 +224,7 @@ function mousePressed() {
       return;
     }
   }
+
   for (let g of seatingGroups) {
     if (g.isMouseOver()) {
       draggingGroup = g;
@@ -149,7 +244,6 @@ function mouseReleased() {
   }
   if (draggingGroup) {
     draggingGroup.isDragging = false;
-    // After group drag ends, update all assigned students' positions
     for (let i = 0; i < seatingGroups.length; i++) {
       let group = seatingGroups[i];
       for (let j = 0; j < group.seats; j++) {
@@ -179,14 +273,12 @@ function snapStudentToSeat(stud) {
       }
     }
   }
-  // If not snapped to any seat, clear assignment
   stud.group = null;
   stud.seatIndex = null;
 }
 
 function createHamburgerMenu() {
   hamburgerBtn = createButton('☰');
-  //hamburgerBtn.position(10, 10);
   hamburgerBtn.position(10, 70);
   hamburgerBtn.size(45, 45);
   hamburgerBtn.style('font-size', '20px');
@@ -201,78 +293,94 @@ function createHamburgerMenu() {
   });
 
   uiDiv = createDiv().id('settingsUI');
-  //uiDiv.position(10, 50);
   uiDiv.position(10, 70);
 }
 
 function createSettingsUI() {
   uiDiv.html(`
-    <div style="position: relative; margin-bottom: 10px;">
-      <style>
-        #settingsUI {
-          background: #3898EC;
-          padding: 10px;
-          border:1px solid #ccc;
-          max-height: 85vh;
-          overflow-y: auto;
-          border-radius: 9px;
-        }
+    <style>
+      #settingsUI {
+        background: #3898EC;
+        padding: 0;
+        border:1px solid #ccc;
+        max-height: 85vh;
+        overflow-y: auto;
+        border-radius: 9px;
+        position: relative;
+      }
 
-        .treoBtn {
-          background-color: #E2ECF7;
-          border: 2px solid #E2ECF7;
-          color: #3898EC;
-          padding: 6px;
-          text-align: center;
-          text-decoration: none;
-          display: inline-block;
-          font-size: 16px;
-          margin: 4px 2px;
-          cursor: pointer;
-          border-radius: 6px;
-        }
-        .treoBtn:hover {
-          background-color: #3898EC;
-          color: #E2ECF7;
-        }
-      </style>
+      #settingsHeader {
+        position: sticky;
+        top: 0;
+        background: #3898EC;
+        padding: 10px;
+        z-index: 10;
+        border-radius: 9px 9px 0 0;
+      }
+
+      #settingsContent {
+        padding: 0 10px 10px 10px;
+      }
+
+      .treoBtn {
+        background-color: #E2ECF7;
+        border: 2px solid #E2ECF7;
+        color: #3898EC;
+        padding: 6px;
+        text-align: center;
+        text-decoration: none;
+        display: inline-block;
+        font-size: 16px;
+        margin: 4px 2px;
+        cursor: pointer;
+        border-radius: 6px;
+      }
+      .treoBtn:hover {
+        background-color: #3898EC;
+        color: #E2ECF7;
+      }
+    </style>
+    <div id="settingsHeader">
       <h3 style="color: #E2ECF7;margin: 0; padding-top: 4px; padding-bottom: 6px;">Seating Chart Setup</h3>
       <button id="closeSettingsBtn" style="
         position: absolute;
-        top: 0;
-        right: 0;
+        top: 10px;
+        right: 10px;
         padding: 2px 6px;
         font-size: 16px;
         border: none;
         background: transparent;
         cursor: pointer;
+        color: #E2ECF7;
       ">❌</button>
     </div>
-    <label>Student Names (comma-separated):</label><br>
-    <input type="text" id="studentNames"><br>
+    <div id="settingsContent">
+      <label>Student Names (comma-separated):</label><br>
+      <input type="text" id="studentNames"><br>
 
-    <label>Tables (by # of seats, comma-separated):</label><br>
-    <input type="text" id="seatsPerGroup" value="3,2,4"><br>
+      <label>Tables (by # of seats, comma-separated):</label><br>
+      <input type="text" id="seatsPerGroup" value="3,2,4"><br>
 
-    <button class="treoBtn" onclick="applySettings()">Generate Classroom</button><br>
-    <div id="studentPrefs"></div>
+      <button class="treoBtn" onclick="applySettings()">Generate Classroom</button><br>
+      <div id="studentPrefs"></div>
 
-    <div style="display:flex;align-items:center;gap:10px;">
-      <button class="treoBtn"id="suggestBtn">Suggest Seating</button>
-      <label style="display:flex;align-items:center;gap:4px;">
-        <input type="checkbox" id="allowBruteForce"> Brute-force seating (slow)
-      </label>
-      <span id="loadingSpinner" style="display:none;"><svg width="20" height="20" viewBox="0 0 50 50"><circle cx="25" cy="25" r="20" fill="none" stroke="#888" stroke-width="5" stroke-dasharray="31.4 31.4" transform="rotate(-90 25 25)"><animateTransform attributeName="transform" type="rotate" from="0 25 25" to="360 25 25" dur="1s" repeatCount="indefinite"/></circle></svg></span>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <button class="treoBtn"id="suggestBtn">Suggest Seating</button>
+        <label style="display:flex;align-items:center;gap:4px;">
+          <input type="checkbox" id="allowBruteForce"> Brute-force seating (slow)
+        </label>
+        <span id="loadingSpinner" style="display:none;"><svg width="20" height="20" viewBox="0 0 50 50"><circle cx="25" cy="25" r="20" fill="none" stroke="#888" stroke-width="5" stroke-dasharray="31.4 31.4" transform="rotate(-90 25 25)"><animateTransform attributeName="transform" type="rotate" from="0 25 25" to="360 25 25" dur="1s" repeatCount="indefinite"/></circle></svg></span>
+      </div>
+
+      <div style="display:flex;align-items:center;gap:10px;">
+        <button class="treoBtn" style="border-radius: 8px" onclick="importData()">Import Data</button>
+        <button class="treoBtn" id="exportCopy">Export & Copy Data</button><br><br>
+      </div>
+
+      <textarea id="importExport" rows="8" style="width: 100%"></textarea>
     </div>
-
-    <div style="display:flex;align-items:center;gap:10px;">
-      <button class="treoBtn" style="border-radius: 8px" onclick="importData()">Import Data</button>
-      <button class="treoBtn" id="exportCopy">Export & Copy Data</button><br><br>
-    </div>
-
-    <textarea id="importExport" rows="8" style="width: 100%"></textarea>
   `);
-  // Add export & copy logic
+
   setTimeout(() => {
     let closeBtn = select('#closeSettingsBtn');
     if (closeBtn) {
@@ -283,7 +391,6 @@ function createSettingsUI() {
     let exportCopyBtn = select('#exportCopy');
     if (exportCopyBtn) {
       exportCopyBtn.mousePressed(() => {
-        // Run exportData logic
         let data = {
           settings,
           groups: seatingGroups.map(g => ({ x: g.x, y: g.y })),
@@ -305,7 +412,6 @@ function createSettingsUI() {
         });
       });
     }
-    // Suggest Seating button logic with loading spinner
     let suggestBtn = select('#suggestBtn');
     let loadingSpinner = select('#loadingSpinner');
     if (suggestBtn && loadingSpinner) {
@@ -329,15 +435,40 @@ function applySettings() {
 
   let names = select('#studentNames').value().split(',').map(n => n.trim()).filter(n => n.length > 0);
   names.sort((a, b) => a.localeCompare(b));
+  
+  // Calculate student positions in a grid centered at bottom
+  let studentSize = 60;
+  let padding = 20;
+  let maxWidth = width * 0.6; // Use 60% of screen width for students
+  let cols = Math.floor(maxWidth / (studentSize + padding));
+  cols = Math.max(1, cols); // At least 1 column
+  
+  let rows = Math.ceil(names.length / cols);
+  let gridWidth = cols * (studentSize + padding);
+  let startX = (width - gridWidth) / 2; // Center the grid horizontally
+  
   names.forEach((name, i) => {
-    let x = 100 + (i * 60);
-    let y = height - 100;
+    let col = i % cols;
+    let row = Math.floor(i / cols);
+    let x = startX + col * (studentSize + padding) + studentSize / 2;
+    let y = height - 80 - row * (studentSize + padding); // Start 80px from bottom
     students.push(new Student(name, x, y));
   });
 
+  // Position groups within visible area with proper spacing
+  let groupMargin = 150;
+  let groupSpacing = 250;
+  
   for (let g = 0; g < settings.seatsPerGroup.length; g++) {
-    let gx = 300 + (g % 3) * 200;
-    let gy = 150 + Math.floor(g / 3) * 200;
+    let col = g % 3;
+    let row = Math.floor(g / 3);
+    let gx = groupMargin + col * groupSpacing;
+    let gy = groupMargin + row * groupSpacing;
+    
+    // Ensure groups don't go off-screen
+    gx = constrain(gx, groupMargin, width - groupMargin);
+    gy = constrain(gy, groupMargin, height - 250); // Leave more room for students at bottom
+    
     seatingGroups.push(new SeatingGroup(gx, gy, settings.seatsPerGroup[g]));
   }
 
