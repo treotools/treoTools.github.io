@@ -18,20 +18,45 @@
     <main>
       <header>
         <div class="topnav">
-          <a class="title active" href="../">t r ē • o • b y t e s</a>
-          <a class="page" href="#">TOOLS</a>
-          <a class="page" href="https://treobytes.com/" target="_blank">ABOUT</a>
+          <a class="title" href="https://treobytes.com/" target="_blank">t r ē • o • b y t e s</a>
+          <div class="nav-dropdown">
+            <a class="page dropbtn">forms</a>
+            <div class="nav-dropdown-content">
+              <a href="https://docs.google.com/forms/d/e/1FAIpQLSdS3Pr4cDVxuxvjUcQFgch6MAelz_VtT82yESzQ8N1jVQJRPQ/viewform" target="_blank">filament tracker</a>
+              <a href="https://forms.gle/ZBzKzZVLCCtB1i1w9" target="_blank">incident report</a>
+            </div>
+          </div>
+          <div class="nav-dropdown">
+            <a class="page dropbtn">links</a>
+            <div class="nav-dropdown-content">
+              <a href="#" target="_blank">lemon grove</a>
+              <a href="#" target="_blank">esco YMCA</a>
+              <a href="#" target="_blank">esco drone</a>
+              <a href="https://app.gusto.com/treobytes/employee/time_tracking" target="_blank">gusto payroll</a>
+              <a href="https://treobytes.slack.com/" target="_blank">slack</a>
+            </div>
+          </div>
+          <div class="nav-dropdown">
+            <a class="page active dropbtn">tools</a>
+            <div class="nav-dropdown-content">
+              <a href="https://treo-tory.vercel.app/auth/login" target="_blank">tre • o • tory</a>
+              <a class="active" href="seatingChart/">seating chart</a>
+            </div>
+          </div>
+          <a class="page" href="../">home</a>
         </div>
-        <div class="menu">
+        <!-- Mobile hamburger menu (only shows on small screens) -->
+        <div class="menu"> 
           <button class="dropdown">
-            <img src="../images/icons/nav.png" alt="image">
-            <div class="dropdownMenu">
-            <a class="selected" href="#">HOME</a>
-            <a href="#" target="_blank">TOOLS</a>
-            <a href="https://treobytes.com/">ABOUT</a>
+            <img src="../images/icons/nav.png" alt="navigation menu">
           </button>
+          <div class="dropdownMenu">
+            <a class="page" href="../">home</a>
+            <a class="selected" href="#">tools</a>
+            <a href="#">links</a>
+            <a href="#">forms</a>
+          </div>
         </div>
-        <br>
       </header>
       <div class="footer">
         <img src="../images/logo/TreoLogo.png" alt="image" style="width:30px; margin:15px;">

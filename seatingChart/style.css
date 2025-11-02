@@ -7,7 +7,7 @@ body {
 }
 
 .topnav {
-  overflow: hidden;
+  overflow: visible;
   position: fixed;
   left: 0;
   top: 0;
@@ -44,6 +44,54 @@ body {
   color: #E2ECF7;
 }
 
+.nav-dropdown {
+  float: right;
+  position: relative;
+  display: block;
+}
+
+.nav-dropdown .dropbtn {
+  cursor: pointer;
+}
+
+/* Dropdown content (hidden by default) */
+.nav-dropdown-content {
+  display: none;
+  position: absolute;
+  right: 0;
+  background-color: #E2ECF7;
+  min-width: 170px;
+  box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+  z-index: 1;
+  margin-top: 56px;
+}
+
+/* Links inside the dropdown */
+.nav-dropdown-content a {
+  color: #3898EC;
+  padding: 14px 16px;
+  text-decoration: none;
+  display: block;
+  text-align: center;
+  float: none;
+}
+
+/* Change color on hover */
+.nav-dropdown-content a:hover {
+  background-color: #3898EC;
+  color: #E2ECF7;
+}
+
+/* Show the dropdown menu on hover */
+.nav-dropdown:hover .nav-dropdown-content {
+  display: block;
+}
+
+.nav-dropdown:hover .dropbtn {
+  background-color: #3898EC;
+  color: #E2ECF7;
+}
+
 .menu {
   position: fixed;
   display: inline-block;
@@ -60,7 +108,7 @@ body {
 
 .dropdownMenu {
   display: none;
-  margin-top: -30px;
+  margin-top: 1px;
   margin-left: -48px;
   background-color: #E2ECF7;
   min-width: 3%;
@@ -117,4 +165,22 @@ canvas {
 
 label {
   color: #E2ECF7;
+}
+
+@media screen and (max-width: 666px){
+  .topnav a.page {
+    display: none;
+  }
+  
+  .nav-dropdown {
+    display: none;
+  }
+
+  .menu .dropdown {
+    display: contents;
+  }
+
+  .dropdown:hover img {
+    display: inline-block;
+  }
 }
