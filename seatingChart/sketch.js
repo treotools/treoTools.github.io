@@ -8,13 +8,13 @@ let dragConstraints = {
   student: {
     left: 45,
     right: 45,
-    top: 75,
+    top: 90,
     bottom: 75
   },
   group: {
     left: 126,  // Extra room for group radius
     right: 126,
-    top: 156,
+    top: 171,
     bottom: 156
   }
 };
@@ -456,7 +456,7 @@ function applySettings() {
   });
 
   // Position groups within visible area with proper spacing
-  let groupMargin = 150;
+  let groupMargin = 180;
   let groupSpacing = 250;
   
   for (let g = 0; g < settings.seatsPerGroup.length; g++) {
