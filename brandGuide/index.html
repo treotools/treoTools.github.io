@@ -1,19 +1,17 @@
 <!DOCTYPE html>
+
 <html lang="en">
   <head>
     <link rel="icon" type="image/png" href="../images/logo/TreoLogo.png">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Treobytes | Seating Chart Tool</title>
-    <script src="p5/p5.js"></script>
-    <script src="p5/addons/p5.sound.js"></script>
-    <script src="p5/addons/p5.sound.min.js"></script>
+    <title>Treobytes | Web Tools</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@100&display=swap" rel="stylesheet">
-    <link rel="stylesheet" type="text/css" href="style.css">
-
+    <link rel="stylesheet" href="styles.css">
   </head>
+
   <body>
     <main>
       <header>
@@ -27,17 +25,17 @@
             </div>
           </div>
           <div class="nav-dropdown">
-            <a class="page dropbtn">office</a>
+            <a class="page active dropbtn">office</a>
             <div class="nav-dropdown-content">
               <a href="https://treo-tory.vercel.app/auth/login" target="_blank">tre • o • tory</a>
               <a href="https://docs.google.com/forms/d/e/1FAIpQLSdS3Pr4cDVxuxvjUcQFgch6MAelz_VtT82yESzQ8N1jVQJRPQ/viewform" target="_blank">filament tracker</a>
-              <a href="../brandGuide/">brand guide</a>
+              <a class="active" href="#">brand guide</a>
             </div>
           </div>
           <div class="nav-dropdown">
-            <a class="page active dropbtn">campus</a>
+            <a class="page dropbtn">campus</a>
             <div class="nav-dropdown-content">
-              <a class="active" href="#">seating chart</a>
+              <a href="../seatingChart/">seating chart</a>
               <a href="https://forms.gle/ZBzKzZVLCCtB1i1w9" target="_blank">incident report</a>
               <a href="https://docs.google.com/document/d/17P8jRzS8m7i6Blzc8N-CQ5di3Zc5ziNUiy6PqSxkaQw/edit?usp=sharing" target="_blank">lemon grove</a>
               <a href="#">esco YMCA</a>
@@ -53,16 +51,31 @@
           </button>
           <div class="dropdownMenu">
             <a href="../">home</a>
-            <a class="selected" href="#">campus</a>
-            <a href="#">office</a>
+            <a href="#">campus</a>
+            <a class="selected" href="#">office</a>
             <a href="#">portal</a>
           </div>
         </div>
       </header>
+
+      <div class="container">
+        <div class="item item001"><img src="text.png" alt="image"></div>
+        <div class="item item002"><img src="video.png" alt="image">
+      </div>
+
       <div class="footer">
         <img src="../images/logo/TreoLogo.png" alt="image" style="width:30px; margin:15px;">
+        <!-- <div class="audioPlayer">
+          <img class="button" id = "rewindAudio" src="images/buttons/rewind.png" alt="image">
+          <img class="button" id = "playAudio" src="images/buttons/play.png" alt="image">
+          <img class="button" id = "skipAudio" src="images/buttons/skip.png" alt="image">
+          <a class="trackInfo" id = "trackTitle" href="#" style="text-decoration: none;"></a>
+          <a href="#l">
+            <img class="button" id = "thumbnail" src="images/thumbnails/01.png" alt="image">
+          </a>
+        </div> -->
       </div>
     </main>
-    <script src="sketch.js"></script>
   </body>
+  <!-- <script src = "musicPlayer.js"></script> -->
 </html>
