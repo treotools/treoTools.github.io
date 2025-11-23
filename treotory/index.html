@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="icon" type="image/png" href="images/logo/TreoLogo.png">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Treobytes | Inventory Management</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@100&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #E2ECF7;
+      color: #333;
+    }
+    
+    .header {
+      background-color: #3898EC;
+      color: #E2ECF7;
+      padding: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    
+    .header h1 {
+      font-size: 24px;
+      font-weight: bold;
+    }
+    
+    .user-controls {
+      display: flex;
+      gap: 15px;
+      align-items: center;
+    }
+    
+    .role-selector {
+      padding: 8px 15px;
+      border-radius: 5px;
+      border: 2px solid #E2ECF7;
+      background: #E2ECF7;
+      color: #3898EC;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    
+    .container {
+      max-width: 1400px;
+      margin: 30px auto;
+      padding: 0 20px;
+    }
+    
+    .controls {
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+      display: flex;
+      gap: 15px;
+      flex-wrap: wrap;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    
+    .search-box {
+      flex: 1;
+      min-width: 300px;
+      padding: 12px 15px;
+      border: 2px solid #3898EC;
+      border-radius: 8px;
+      font-size: 16px;
+    }
+    
+    .btn {
+      padding: 12px 20px;
+      background: #3898EC;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: all 0.3s;
+    }
+    
+    .btn:hover {
+      background: #2878cc;
+      transform: translateY(-2px);
+    }
+    
+    .btn-secondary {
+      background: #E2ECF7;
+      color: #3898EC;
+      border: 2px solid #3898EC;
+    }
+    
+    .btn-secondary:hover {
+      background: #3898EC;
+      color: white;
+    }
+    
+    .inventory-table {
+      background: white;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    
+    thead {
+      background: #3898EC;
+      color: white;
+    }
+    
+    th {
+      padding: 15px;
+      text-align: left;
+      font-weight: bold;
+      font-size: 14px;
+      text-transform: uppercase;
+    }
+    
+    td {
+      padding: 15px;
+      border-bottom: 1px solid #E2ECF7;
+    }
+    
+    tbody tr:hover {
+      background: #f8fbfe;
+    }
+    
+    .item-name {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+    }
+    
+    .expand-icon {
+      color: #3898EC;
+      font-weight: bold;
+      width: 20px;
+      text-align: center;
+    }
+    
+    .indent-1 { padding-left: 30px; }
+    .indent-2 { padding-left: 60px; }
+    .indent-3 { padding-left: 90px; }
+    
+    .category-row {
+      background: #f0f7fc;
+      font-weight: bold;
+    }
+    
+    .count-cell {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .chart-toggle {
+      background: #E2ECF7;
+      color: #3898EC;
+      border: none;
+      padding: 5px 10px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 12px;
+    }
+    
+    .low-stock {
+      color: #ff6b6b;
+      font-weight: bold;
+    }
+    
+    .discrepancy {
+      color: #ffa500;
+      font-weight: bold;
+    }
+    
+    .badge {
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: bold;
+    }
+    
+    .badge-must { background: #ff6b6b; color: white; }
+    .badge-preferred { background: #ffa500; color: white; }
+    .badge-consumable { background: #51cf66; color: white; }
+    
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      z-index: 1000;
+      justify-content: center;
+      align-items: center;
+    }
+    
+    .modal-content {
+      background: white;
+      padding: 30px;
+      border-radius: 10px;
+      max-width: 500px;
+      width: 90%;
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+    
+    .modal h2 {
+      color: #3898EC;
+      margin-bottom: 20px;
+    }
+    
+    .form-group {
+      margin-bottom: 15px;
+    }
+    
+    .form-group label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+      color: #333;
+    }
+    
+    .form-group input, .form-group select {
+      width: 100%;
+      padding: 10px;
+      border: 2px solid #E2ECF7;
+      border-radius: 5px;
+      font-size: 14px;
+    }
+    
+    .form-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 20px;
+    }
+    
+    .editable {
+      border: 1px dashed #3898EC;
+      padding: 5px;
+      border-radius: 3px;
+      cursor: pointer;
+    }
+    
+    .readonly {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+    
+    .alert {
+      padding: 12px 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .alert-warning {
+      background: #fff3cd;
+      border-left: 4px solid #ffa500;
+      color: #856404;
+    }
+    
+    .alert-info {
+      background: #d1ecf1;
+      border-left: 4px solid #3898EC;
+      color: #0c5460;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>🏢 Treobytes | Inventory Management</h1>
+    <div class="user-controls">
+      <span id="currentUser">Logged in as: <strong>Operations Manager</strong></span>
+      <select class="role-selector" id="roleSelector">
+        <option value="ops">Operations Manager</option>
+        <option value="staff">Office Staff</option>
+        <option value="facilitator">Site Facilitator</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="alert alert-info" id="roleInfo">
+      <span>👤</span>
+      <span>As <strong>Operations Manager</strong>, you have full control over all inventory data.</span>
+    </div>
+
+    <div class="controls">
+      <input type="text" class="search-box" id="searchBox" placeholder="🔍 Search items or categories...">
+      <button class="btn" onclick="openAddItemModal()">➕ Add Item</button>
+      <button class="btn btn-secondary" onclick="openAddCategoryModal()">📁 Add Category</button>
+      <button class="btn btn-secondary" onclick="openThresholdModal()">⚙️ Set Thresholds</button>
+      <button class="btn btn-secondary" onclick="exportData()">📤 Export</button>
+    </div>
+
+    <div class="inventory-table">
+      <table id="inventoryTable">
+        <thead>
+          <tr>
+            <th style="width: 35%">Item Catalog</th>
+            <th style="width: 20%">Inventory Count</th>
+            <th style="width: 15%">Return Policy</th>
+            <th style="width: 30%">Storage Location</th>
+          </tr>
+        </thead>
+        <tbody id="inventoryBody">
+          <!-- Data will be populated by JavaScript -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Add Item Modal -->
+  <div class="modal" id="addItemModal">
+    <div class="modal-content">
+      <h2>Add New Item</h2>
+      <div class="form-group">
+        <label>Item Name</label>
+        <input type="text" id="newItemName" placeholder="e.g., 100 Ohm Resistor">
+      </div>
+      <div class="form-group">
+        <label>Parent Category</label>
+        <select id="newItemParent">
+          <option value="">Root Level</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Initial Count</label>
+        <input type="number" id="newItemCount" value="0">
+      </div>
+      <div class="form-group">
+        <label>Return Policy</label>
+        <select id="newItemPolicy">
+          <option value="must">Must Return</option>
+          <option value="preferred">Preferred Return</option>
+          <option value="consumable">Consumable</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>HQ Location</label>
+        <input type="text" id="newItemLocation" placeholder="e.g., Shelf A3-Bin5">
+      </div>
+      <div class="form-actions">
+        <button class="btn" onclick="addNewItem()">Add Item</button>
+        <button class="btn btn-secondary" onclick="closeModal('addItemModal')">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Category Modal -->
+  <div class="modal" id="addCategoryModal">
+    <div class="modal-content">
+      <h2>Add New Category</h2>
+      <div class="form-group">
+        <label>Category Name</label>
+        <input type="text" id="newCategoryName" placeholder="e.g., Resistors">
+      </div>
+      <div class="form-group">
+        <label>Parent Category</label>
+        <select id="newCategoryParent">
+          <option value="">Root Level</option>
+        </select>
+      </div>
+      <div class="form-actions">
+        <button class="btn" onclick="addNewCategory()">Add Category</button>
+        <button class="btn btn-secondary" onclick="closeModal('addCategoryModal')">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Threshold Settings Modal -->
+  <div class="modal" id="thresholdModal">
+    <div class="modal-content">
+      <h2>Stock Alert Thresholds</h2>
+      <div class="form-group">
+        <label>Global: Consumable Items</label>
+        <input type="number" id="globalConsumable" value="10">
+        <small>Alert when consumable items fall below this count</small>
+      </div>
+      <div class="form-group">
+        <label>Global: Preferred Return Items</label>
+        <input type="number" id="globalPreferred" value="5">
+        <small>Alert when preferred return items fall below this count</small>
+      </div>
+      <div class="form-actions">
+        <button class="btn" onclick="saveThresholds()">Save Thresholds</button>
+        <button class="btn btn-secondary" onclick="closeModal('thresholdModal')">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Sample data structure
+    let inventory = [
+      {
+        id: 1,
+        name: 'Resistors',
+        type: 'category',
+        parent: null,
+        expanded: true,
+        children: [2, 3, 4, 5]
+      },
+      {
+        id: 2,
+        name: '100 Ohms',
+        type: 'item',
+        parent: 1,
+        count: 250,
+        hqCount: 150,
+        sites: { 'Lemon Grove': 50, 'Esco YMCA': 50 },
+        policy: 'consumable',
+        location: 'Shelf A3-Bin2',
+        threshold: null
+      },
+      {
+        id: 3,
+        name: '220 Ohms',
+        type: 'item',
+        parent: 1,
+        count: 8,
+        hqCount: 5,
+        sites: { 'Lemon Grove': 3 },
+        policy: 'consumable',
+        location: 'Shelf A3-Bin2',
+        threshold: null
+      },
+      {
+        id: 4,
+        name: '330 Ohms',
+        type: 'item',
+        parent: 1,
+        count: 180,
+        hqCount: 100,
+        sites: { 'Lemon Grove': 40, 'Esco YMCA': 40 },
+        policy: 'consumable',
+        location: 'Shelf A3-Bin3',
+        threshold: null
+      },
+      {
+        id: 5,
+        name: '1K Ohms',
+        type: 'item',
+        parent: 1,
+        count: 200,
+        hqCount: 120,
+        sites: { 'Lemon Grove': 40, 'Esco YMCA': 40 },
+        policy: 'consumable',
+        location: 'Shelf A3-Bin4',
+        threshold: null
+      },
+      {
+        id: 6,
+        name: 'Wire',
+        type: 'category',
+        parent: null,
+        expanded: true,
+        children: [7, 8]
+      },
+      {
+        id: 7,
+        name: 'Utility',
+        type: 'category',
+        parent: 6,
+        expanded: false,
+        children: [9, 10]
+      },
+      {
+        id: 8,
+        name: 'Prototyping',
+        type: 'category',
+        parent: 6,
+        expanded: false,
+        children: [11]
+      },
+      {
+        id: 9,
+        name: 'HDMI Standard M2M Cord',
+        type: 'item',
+        parent: 7,
+        count: 15,
+        hqCount: 10,
+        sites: { 'Lemon Grove': 3, 'Esco YMCA': 2 },
+        policy: 'must',
+        location: 'Shelf B1-Bin1',
+        threshold: null
+      },
+      {
+        id: 10,
+        name: 'USB-C to USB-A Cable',
+        type: 'item',
+        parent: 7,
+        count: 25,
+        hqCount: 15,
+        sites: { 'Lemon Grove': 5, 'Esco YMCA': 5 },
+        policy: 'preferred',
+        location: 'Shelf B1-Bin2',
+        threshold: null
+      },
+      {
+        id: 11,
+        name: 'Dupont Wires (M2M)',
+        type: 'item',
+        parent: 8,
+        count: 500,
+        hqCount: 300,
+        sites: { 'Lemon Grove': 100, 'Esco YMCA': 100 },
+        policy: 'consumable',
+        location: 'Shelf B2-Bin5',
+        threshold: null
+      },
+      {
+        id: 12,
+        name: 'Laptops',
+        type: 'category',
+        parent: null,
+        expanded: true,
+        children: [13, 14]
+      },
+      {
+        id: 13,
+        name: 'Dell Chromebook',
+        type: 'item',
+        parent: 12,
+        count: 12,
+        hqCount: 5,
+        sites: { 'Lemon Grove': 4, 'Esco YMCA': 3 },
+        policy: 'must',
+        location: 'Cabinet C-Shelf 2',
+        threshold: 2
+      },
+      {
+        id: 14,
+        name: 'HP Laptop',
+        type: 'item',
+        parent: 12,
+        count: 8,
+        hqCount: 3,
+        sites: { 'Lemon Grove': 3, 'Esco YMCA': 2 },
+        policy: 'must',
+        location: 'Cabinet C-Shelf 3',
+        threshold: 2
+      }
+    ];
+
+    let thresholds = {
+      consumable: 10,
+      preferred: 5
+    };
+
+    let currentRole = 'ops';
+    let searchTerm = '';
+
+    // Initialize
+    renderInventory();
+    populateCategoryDropdowns();
+
+    // Role selector
+    document.getElementById('roleSelector').addEventListener('change', (e) => {
+      currentRole = e.target.value;
+      updateRoleInfo();
+      renderInventory();
+    });
+
+    // Search
+    document.getElementById('searchBox').addEventListener('input', (e) => {
+      searchTerm = e.target.value.toLowerCase();
+      renderInventory();
+    });
+
+    function updateRoleInfo() {
+      const roleInfo = document.getElementById('roleInfo');
+      const roleTexts = {
+        ops: 'As <strong>Operations Manager</strong>, you have full control over all inventory data.',
+        staff: 'As <strong>Office Staff</strong>, you can adjust locations and distributions, but cannot change total counts.',
+        facilitator: 'As <strong>Site Facilitator</strong>, you can only update counts for your assigned site.'
+      };
+      roleInfo.innerHTML = `<span>👤</span><span>${roleTexts[currentRole]}</span>`;
+    }
+
+    function renderInventory() {
+      const tbody = document.getElementById('inventoryBody');
+      tbody.innerHTML = '';
+      
+      const rootItems = inventory.filter(item => !item.parent);
+      rootItems.forEach(item => renderItem(item, 0, tbody));
+    }
+
+    function renderItem(item, level, parent) {
+      if (searchTerm && !matchesSearch(item)) return;
+
+      const row = document.createElement('tr');
+      row.className = item.type === 'category' ? 'category-row' : '';
+      
+      // Item Catalog column
+      const nameCell = document.createElement('td');
+      nameCell.className = `indent-${level}`;
+      nameCell.innerHTML = `
+        <div class="item-name">
+          ${item.type === 'category' ? 
+            `<span class="expand-icon" onclick="toggleExpand(${item.id})">${item.expanded ? '▼' : '▶'}</span>` : 
+            '<span class="expand-icon"></span>'}
+          <span>${item.name}</span>
+        </div>
+      `;
+      row.appendChild(nameCell);
+      
+      // Inventory Count column
+      const countCell = document.createElement('td');
+      if (item.type === 'item') {
+        const siteTotal = Object.values(item.sites || {}).reduce((a, b) => a + b, 0);
+        const totalCount = item.hqCount + siteTotal;
+        const hasDiscrepancy = totalCount !== item.count;
+        const threshold = item.threshold || (item.policy === 'consumable' ? thresholds.consumable : thresholds.preferred);
+        const isLowStock = item.count < threshold && item.policy !== 'must';
+        
+        countCell.innerHTML = `
+          <div class="count-cell">
+            <span class="${hasDiscrepancy ? 'discrepancy' : ''} ${isLowStock ? 'low-stock' : ''}">
+              ${item.count} ${hasDiscrepancy ? '⚠️' : ''} ${isLowStock ? '🔔' : ''}
+            </span>
+            <button class="chart-toggle" onclick="alert('Stock Distribution:\\n\\nHQ: ${item.hqCount}\\n${Object.entries(item.sites || {}).map(([site, count]) => `${site}: ${count}`).join('\\n')}')">
+              📊 View
+            </button>
+          </div>
+        `;
+      } else {
+        countCell.innerHTML = '-';
+      }
+      row.appendChild(countCell);
+      
+      // Return Policy column
+      const policyCell = document.createElement('td');
+      if (item.type === 'item') {
+        const policyClass = item.policy === 'must' ? 'badge-must' : 
+                           item.policy === 'preferred' ? 'badge-preferred' : 'badge-consumable';
+        const policyText = item.policy === 'must' ? 'Must Return' : 
+                          item.policy === 'preferred' ? 'Preferred Return' : 'Consumable';
+        policyCell.innerHTML = `<span class="badge ${policyClass}">${policyText}</span>`;
+      } else {
+        policyCell.innerHTML = '-';
+      }
+      row.appendChild(policyCell);
+      
+      // Storage Location column
+      const locationCell = document.createElement('td');
+      if (item.type === 'item') {
+        const canEdit = currentRole === 'ops' || currentRole === 'staff';
+        locationCell.innerHTML = `
+          <span class="${canEdit ? 'editable' : 'readonly'}" 
+                onclick="${canEdit ? `editLocation(${item.id})` : ''}">
+            ${item.location || 'Not set'}
+          </span>
+        `;
+      } else {
+        locationCell.innerHTML = '-';
+      }
+      row.appendChild(locationCell);
+      
+      parent.appendChild(row);
+      
+      // Render children if expanded
+      if (item.type === 'category' && item.expanded && item.children) {
+        item.children.forEach(childId => {
+          const child = inventory.find(i => i.id === childId);
+          if (child) renderItem(child, level + 1, parent);
+        });
+      }
+    }
+
+    function matchesSearch(item) {
+      if (!searchTerm) return true;
+      return item.name.toLowerCase().includes(searchTerm);
+    }
+
+    function toggleExpand(id) {
+      const item = inventory.find(i => i.id === id);
+      if (item) {
+        item.expanded = !item.expanded;
+        renderInventory();
+      }
+    }
+
+    function openAddItemModal() {
+      document.getElementById('addItemModal').style.display = 'flex';
+    }
+
+    function openAddCategoryModal() {
+      document.getElementById('addCategoryModal').style.display = 'flex';
+    }
+
+    function openThresholdModal() {
+      document.getElementById('globalConsumable').value = thresholds.consumable;
+      document.getElementById('globalPreferred').value = thresholds.preferred;
+      document.getElementById('thresholdModal').style.display = 'flex';
+    }
+
+    function closeModal(modalId) {
+      document.getElementById(modalId).style.display = 'none';
+    }
+
+    function populateCategoryDropdowns() {
+      const categories = inventory.filter(i => i.type === 'category');
+      const itemParent = document.getElementById('newItemParent');
+      const catParent = document.getElementById('newCategoryParent');
+      
+      [itemParent, catParent].forEach(select => {
+        select.innerHTML = '<option value="">Root Level</option>';
+        categories.forEach(cat => {
+          select.innerHTML += `<option value="${cat.id}">${cat.name}</option>`;
+        });
+      });
+    }
+
+    function addNewItem() {
+      const name = document.getElementById('newItemName').value;
+      const parent = document.getElementById('newItemParent').value;
+      const count = parseInt(document.getElementById('newItemCount').value);
+      const policy = document.getElementById('newItemPolicy').value;
+      const location = document.getElementById('newItemLocation').value;
+      
+      if (!name) {
+        alert('Please enter an item name');
+        return;
+      }
+      
+      const newItem = {
+        id: Math.max(...inventory.map(i => i.id)) + 1,
+        name,
+        type: 'item',
+        parent: parent ? parseInt(parent) : null,
+        count,
+        hqCount: count,
+        sites: {},
+        policy,
+        location,
+        threshold: null
+      };
+      
+      inventory.push(newItem);
+      
+      if (parent) {
+        const parentCat = inventory.find(i => i.id === parseInt(parent));
+        if (parentCat) {
+          parentCat.children = parentCat.children || [];
+          parentCat.children.push(newItem.id);
+        }
+      }
+      
+      closeModal('addItemModal');
+      renderInventory();
+      populateCategoryDropdowns();
+    }
+
+    function addNewCategory() {
+      const name = document.getElementById('newCategoryName').value;
+      const parent = document.getElementById('newCategoryParent').value;
+      
+      if (!name) {
+        alert('Please enter a category name');
+        return;
+      }
+      
+      const newCat = {
+        id: Math.max(...inventory.map(i => i.id)) + 1,
+        name,
+        type: 'category',
+        parent: parent ? parseInt(parent) : null,
+        expanded: true,
+        children: []
+      };
+      
+      inventory.push(newCat);
+      
+      if (parent) {
+        const parentCat = inventory.find(i => i.id === parseInt(parent));
+        if (parentCat) {
+          parentCat.children = parentCat.children || [];
+          parentCat.children.push(newCat.id);
+        }
+      }
+      
+      closeModal('addCategoryModal');
+      renderInventory();
+      populateCategoryDropdowns();
+    }
+
+    function saveThresholds() {
+      thresholds.consumable = parseInt(document.getElementById('globalConsumable').value);
+      thresholds.preferred = parseInt(document.getElementById('globalPreferred').value);
+      closeModal('thresholdModal');
+      renderInventory();
+      alert('Thresholds saved!');
+    }
+
+    function editLocation(id) {
+      const item = inventory.find(i => i.id === id);
+      const newLocation = prompt('Enter new storage location:', item.location);
+      if (newLocation !== null) {
+        item.location = newLocation;
+        renderInventory();
+      }
+    }
+
+    function exportData() {
+      const data = JSON.stringify({ inventory, thresholds }, null, 2);
+      const blob = new Blob([data], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'inventory-export.json';
+      a.click();
+    }
+  </script>
+</body>
+</html>
