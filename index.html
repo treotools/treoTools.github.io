@@ -5,14 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Redirecting…</title>
   <!-- No-JS fallback: forwards to the new site root -->
-  <meta http-equiv="refresh" content="0; url=https://treobytesdev.github.io/treoTools.github.io/">
-  <link rel="canonical" href="https://treobytesdev.github.io/treoTools.github.io/">
+  <meta http-equiv="refresh" content="0; url=https://treobytesdev.github.io/">
+  <link rel="canonical" href="https://treobytesdev.github.io/">
   <script>
-    // Old site lived at the root (https://treotools.github.io/...), new site
-    // lives under /treoTools.github.io/. Prepend the new base so deep links
-    // (e.g. /reports.html -> /treoTools.github.io/reports.html) keep working.
+    // Both old and new sites are root sites now, so paths map 1:1.
+    // /reports.html  ->  https://treobytesdev.github.io/reports.html
     (function () {
-      var base = "https://treobytesdev.github.io/treoTools.github.io";
+      var base = "https://treobytesdev.github.io";
       var dest = base + window.location.pathname + window.location.search + window.location.hash;
       window.location.replace(dest);
     })();
@@ -28,7 +27,7 @@
   <main>
     <p>This site has moved.</p>
     <p>If you are not redirected automatically,
-       <a href="https://treobytesdev.github.io/treoTools.github.io/">click here to continue</a>.</p>
+       <a href="https://treobytesdev.github.io/">click here to continue</a>.</p>
   </main>
 </body>
 </html>
